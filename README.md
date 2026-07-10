@@ -63,6 +63,18 @@ Known quirks handled by the pipeline:
 | Missing area breakdowns | ~49% of rows | kept as optional attributes (portal-side optional fields) |
 | `agePossession = "Undefined"` | 333 rows | treated as missing |
 
+## Methodology
+
+The analysis follows a fixed sequence — each step is a documented function in `src/cleaning.py`, and the notebook narrates why each decision was made:
+
+1. **Audit before touching anything** — duplicates, per-column missingness, implausible extremes (the raw maxima include an 875,000 sq.ft. "flat" and ₹600,000/sq.ft.).
+2. **Clean with logged, reversible rules** — snake_case renames → drop 126 exact duplicates → label categorical codes (`furnishing_type` 0/1/2, `agePossession` "Undefined" → missing) → drop 17 unpriced rows → trim outside the 0.5th–99.5th percentiles of `price_per_sqft` and `area` (60 rows). Result: 3,803 → 3,600 listings, every removal counted.
+3. **Univariate profiling** — price and ₹/sq.ft. distributions (skewness ≈ 3, hence medians throughout), market composition by property type, age, bedrooms.
+4. **Bivariate analysis** — price vs area by property type, sector-level medians (≥30 listings to avoid small-sample noise), price by bedrooms, correlation matrix, ₹/sq.ft. by furnishing and age.
+5. **Confound checks** — segment aggregates by property type before trusting them; this is what exposed the Simpson's paradox in property age (below).
+
+Every figure is exported to `reports/figures/` and rendered in the executed notebook, so the repo is readable start-to-finish without running anything.
+
 ## Key findings
 
 1. **Two markets, one city** — independent houses have ~3× the median price of flats and higher ₹/sq.ft.; within each segment, area is the strongest price driver.
