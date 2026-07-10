@@ -1,11 +1,4 @@
-# Core data/plot stack
-numpy>=1.24,<3.0
-pandas>=2.1,<3.0
-matplotlib>=3.7,<4.0
-
-# Optional but used in the notebook for stats & dendrograms
-scipy>=1.10,<2.0
-
-# If running locally (not required on Colab), these help launch notebooks
-# jupyterlab>=4.0,<5.0
-# ipykernel>=6.25,<7.0
+pandas>=2.0
+numpy>=1.26
+matplotlib>=3.8
+jupyterlab>=4.0
