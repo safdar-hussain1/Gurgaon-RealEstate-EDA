@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gurgaon Real Estate — Market Atlas</title>
+<meta name="description" content="Interactive dashboard of 3,600 Gurgaon property listings — prices, sectors, and what drives them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Archivo:wdth,wght@62..125,500..900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+<style>
+:root{
+  --paper:#f7f6f2; --card:#ffffff; --ink:#14130f; --ink-2:#52514e; --ink-3:#8b8a84;
+  --line:#e3e1d9; --blue:#2a78d6; --blue-deep:#0d366b; --aqua:#1baf7a; --yellow:#eda100;
+  --red:#e34948;
+  --seq0:#e8f1fc; --seq1:#cde2fb; --seq2:#9ec5f4; --seq3:#6da7ec; --seq4:#3987e5; --seq5:#256abf; --seq6:#184f95; --seq7:#0d366b;
+}
+*{box-sizing:border-box; margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper); color:var(--ink); font:16px/1.6 "IBM Plex Sans",system-ui,sans-serif}
+.wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+a{color:var(--blue)}
+
+/* masthead */
+header{border-bottom:2px solid var(--ink); background:var(--card)}
+.mast{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; padding:20px 0 14px; flex-wrap:wrap}
+.brand{font:600 13px/1 "IBM Plex Mono",monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2)}
+.brand b{color:var(--blue); font-weight:600}
+nav{font:500 13px/1 "IBM Plex Mono",monospace}
+nav a{color:var(--ink-2); text-decoration:none; margin-left:18px}
+nav a:hover,nav a:focus-visible{color:var(--blue)}
+.hero{padding:44px 0 36px}
+h1{font-family:"Archivo",sans-serif; font-variation-settings:"wdth" 118, "wght" 850;
+   font-size:clamp(2.4rem,6vw,4.2rem); line-height:.98; letter-spacing:-.015em; text-transform:uppercase}
+h1 .amp{color:var(--blue)}
+.hero p{max-width:58ch; margin-top:16px; color:var(--ink-2)}
+.hero .src{margin-top:10px; font:400 13px "IBM Plex Mono",monospace; color:var(--ink-3)}
+
+/* segmented filter */
+.controls{display:flex; align-items:center; gap:14px; margin:26px 0 6px; flex-wrap:wrap}
+.controls .lbl{font:500 12px "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+.seg{display:inline-flex; border:1.5px solid var(--ink); border-radius:999px; overflow:hidden; background:var(--card)}
+.seg button{font:600 13px "IBM Plex Sans",sans-serif; padding:8px 18px; border:0; background:transparent; color:var(--ink-2); cursor:pointer}
+.seg button+button{border-left:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.seg button:focus-visible{outline:2px solid var(--blue); outline-offset:-2px}
+
+/* KPI strip */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:1.5px; background:var(--ink); border:1.5px solid var(--ink); margin-top:14px}
+.kpi{background:var(--card); padding:18px 18px 14px}
+.kpi .v{font:600 clamp(1.5rem,3vw,2.1rem)/1.1 "IBM Plex Mono",monospace; color:var(--ink)}
+.kpi .v small{font-size:.55em; color:var(--ink-3)}
+.kpi .k{font:500 11px "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-top:6px}
+
+section{padding:44px 0 8px}
+.sec-head{display:flex; align-items:baseline; gap:14px; border-top:2px solid var(--ink); padding-top:14px}
+.sec-head .no{font:600 13px "IBM Plex Mono",monospace; color:var(--blue)}
+h2{font-family:"Archivo",sans-serif; font-variation-settings:"wdth" 112,"wght" 780; font-size:1.5rem; text-transform:uppercase; letter-spacing:.01em}
+.sec-note{color:var(--ink-2); max-width:64ch; margin:8px 0 20px}
+
+/* sector grid — the signature */
+.gridwrap{background:var(--card); border:1.5px solid var(--ink); padding:20px}
+.sector-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(58px,1fr)); gap:6px}
+.tile{position:relative; aspect-ratio:1; border-radius:3px; display:flex; align-items:center; justify-content:center;
+      font:500 11px "IBM Plex Mono",monospace; cursor:default; transition:transform .12s ease}
+.tile:hover{transform:scale(1.12); z-index:2; outline:1.5px solid var(--ink)}
+.legend{display:flex; align-items:center; gap:10px; margin-top:16px; font:400 12px "IBM Plex Mono",monospace; color:var(--ink-2); flex-wrap:wrap}
+.ramp{display:flex; height:12px; width:180px; border:1px solid var(--line)}
+.ramp i{flex:1}
+.tip{position:fixed; pointer-events:none; background:var(--ink); color:var(--paper); padding:10px 12px; border-radius:4px;
+     font:400 12.5px/1.5 "IBM Plex Mono",monospace; opacity:0; transition:opacity .1s; z-index:10; max-width:230px}
+.tip b{color:#9ec5f4}
+
+/* chart cards */
+.cards{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+.card{background:var(--card); border:1.5px solid var(--ink); padding:18px 18px 10px}
+.card h3{font:600 14px "IBM Plex Sans",sans-serif; margin-bottom:2px}
+.card .sub{font:400 12px "IBM Plex Mono",monospace; color:var(--ink-3); margin-bottom:10px}
+.card.wide{grid-column:1/-1}
+.chartbox{position:relative; height:280px}
+.card.wide .chartbox{height:340px}
+
+/* findings */
+.findings{counter-reset:f; display:grid; grid-template-columns:1fr 1fr; gap:20px}
+.finding{background:var(--card); border:1.5px solid var(--ink); padding:18px}
+.finding::before{counter-increment:f; content:counter(f,decimal-leading-zero);
+  font:600 13px "IBM Plex Mono",monospace; color:var(--blue)}
+.finding h3{font:600 15px "IBM Plex Sans"; margin:4px 0 6px}
+.finding p{font-size:14px; color:var(--ink-2)}
+
+footer{margin-top:56px; border-top:2px solid var(--ink); padding:20px 0 40px;
+  font:400 13px "IBM Plex Mono",monospace; color:var(--ink-2); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+footer a{text-decoration:none}
+
+@media (max-width:760px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .cards,.findings{grid-template-columns:1fr}
+  nav{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .tile{transition:none} html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="mast">
+      <div class="brand">GURGAON <b>/</b> MARKET ATLAS</div>
+      <nav aria-label="Sections">
+        <a href="#sectors">Sectors</a><a href="#drivers">Price drivers</a><a href="#findings">Findings</a>
+        <a href="https://github.com/safdar-hussain1/Gurgaon-RealEstate-EDA">GitHub ↗</a>
+      </nav>
+    </div>
+    <div class="hero">
+      <h1>One city,<br>priced sector <span class="amp">by</span> sector</h1>
+      <p>An interactive atlas of <strong>3,600 residential listings</strong> — flats and independent houses —
+         cleaned and analysed from a raw property-portal feed. Every number below recomputes for the segment you pick.</p>
+      <div class="src">source: exploratory data analysis · python/pandas · full pipeline on GitHub</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="controls" role="group" aria-label="Property type filter">
+    <span class="lbl">Segment</span>
+    <div class="seg" id="seg">
+      <button data-seg="all" aria-pressed="true">All listings</button>
+      <button data-seg="flat" aria-pressed="false">Flats</button>
+      <button data-seg="house" aria-pressed="false">Houses</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis">
+    <div class="kpi"><div class="v" id="k-listings">—</div><div class="k">listings</div></div>
+    <div class="kpi"><div class="v" id="k-price">—</div><div class="k">median price</div></div>
+    <div class="kpi"><div class="v" id="k-ppsf">—</div><div class="k">median ₹ / sq.ft.</div></div>
+    <div class="kpi"><div class="v" id="k-sectors">—</div><div class="k">sectors covered</div></div>
+  </div>
+
+  <section id="sectors">
+    <div class="sec-head"><span class="no">§1</span><h2>The sector grid</h2></div>
+    <p class="sec-note">Gurgaon is literally organised as a numbered grid of sectors — so here is the market as the city sees itself.
+       Each tile is a sector (≥8 listings), shaded by <strong>median listing price</strong>. Hover any tile for details.</p>
+    <div class="gridwrap">
+      <div class="sector-grid" id="sectorGrid" aria-label="Sector price heatmap"></div>
+      <div class="legend">
+        <span>≤ ₹1 Cr</span><div class="ramp" aria-hidden="true"></div><span>≥ ₹6 Cr</span>
+        <span style="margin-left:auto">93 sectors · shading = median price</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="drivers">
+    <div class="sec-head"><span class="no">§2</span><h2>What drives the price</h2></div>
+    <p class="sec-note">Listing prices are heavily right-skewed, so medians tell the honest story. Size dominates,
+       location multiplies, and new stock carries a premium.</p>
+    <div class="cards">
+      <div class="card wide">
+        <h3>Price vs. area</h3><div class="sub">1,100 sampled listings · ₹ crore vs sq.ft.</div>
+        <div class="chartbox"><canvas id="cScatter" role="img" aria-label="Scatter plot of price versus area by property type"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Price distribution</h3><div class="sub">count of listings · ₹ crore (capped at 12)</div>
+        <div class="chartbox"><canvas id="cHist" role="img" aria-label="Histogram of listing prices"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Median price by bedrooms</h3><div class="sub">₹ crore · 1–5 BHK</div>
+        <div class="chartbox"><canvas id="cBeds" role="img" aria-label="Bar chart of median price by bedroom count"></canvas></div>
+      </div>
+      <div class="card wide">
+        <h3>Median ₹/sq.ft. by property age</h3><div class="sub">a Simpson’s paradox: “All listings” makes old stock look priciest — old listings skew toward houses. Toggle Flats to see the real gradient.</div>
+        <div class="chartbox"><canvas id="cAge" role="img" aria-label="Bar chart of price per square foot by property age"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="findings">
+    <div class="sec-head"><span class="no">§3</span><h2>Findings</h2></div>
+    <div class="findings">
+      <div class="finding"><h3>Two markets, one city</h3><p>Independent houses list at roughly 3× the median price of flats, on much larger plots — switch the segment toggle above and watch every chart move.</p></div>
+      <div class="finding"><h3>Location is a step function</h3><p>Median prices across sectors span about 5×. The golden-corridor sectors top the grid; peripheral sectors stay affordable.</p></div>
+      <div class="finding"><h3>3 BHK is the centre of gravity</h3><p>The single largest supply segment. Median price roughly doubles with each bedroom added, up to 5 BHK.</p></div>
+      <div class="finding"><h3>Old ≠ premium: a Simpson’s paradox</h3><p>In aggregate, old properties show the highest ₹/sq.ft. — but 58% of old listings are houses, which carry ~2.5× the ₹/sq.ft. of flats. Within flats, under-construction stock is priciest.</p></div>
+      <div class="finding"><h3>Data quality decided the analysis</h3><p>126 duplicate listings and ~1% unit-error records (an “875,000 sq.ft. flat”) were removed by a documented pipeline before any statistic was trusted.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>Safdar Hussain · exploratory data analysis</span>
+  <a href="https://github.com/safdar-hussain1/Gurgaon-RealEstate-EDA">github.com/safdar-hussain1/Gurgaon-RealEstate-EDA</a>
+</footer>
+
+<div class="tip" id="tip" role="status"></div>
+
+<script>
+const DATA = {"all":{"kpi":{"listings":3600,"medPrice":1.54,"medPpsf":9004,"sectors":104},"priceHist":{"bins":[0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0],"counts":[314,656,752,559,312,191,130,105,68,62,47,55,46,44,31,18,29,21,22,16,11,13,15,83]},"bedsMedian":{"1":0.45,"2":0.85,"3":1.6,"4":2.71,"5":6.0},"agePpsf":{"Under Construction":9519,"New Property":8863,"Relatively New":8516,"Moderately Old":10500,"Old Property":13772}},"flat":{"kpi":{"listings":2799,"medPrice":1.39,"medPpsf":8367,"sectors":98},"priceHist":{"bins":[0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0],"counts":[273,559,698,510,278,156,98,62,36,28,22,18,17,13,6,6,5,2,4,1,1,1,3,2]},"bedsMedian":{"1":0.39,"2":0.85,"3":1.59,"4":2.2,"5":4.23},"agePpsf":{"Under Construction":9502,"New Property":8468,"Relatively New":8253,"Moderately Old":8114,"Old Property":8886}},"house":{"kpi":{"listings":801,"medPrice":4.25,"medPpsf":20000,"sectors":80},"priceHist":{"bins":[0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0],"counts":[41,97,54,49,34,35,32,43,32,34,25,37,29,31,25,12,24,19,18,15,10,12,12,81]},"bedsMedian":{"1":0.89,"2":0.75,"3":2.1,"4":5.25,"5":6.5},"agePpsf":{"Under Construction":12671,"New Property":20115,"Relatively New":23240,"Moderately Old":22222,"Old Property":19869}},"sectors":[{"name":"S2","n":62,"price":1.31,"ppsf":8256,"area":1557},{"name":"S3","n":23,"price":0.8,"ppsf":7916,"area":1008},{"name":"S4","n":42,"price":0.66,"ppsf":9259,"area":854},{"name":"S5","n":25,"price":0.75,"ppsf":8500,"area":900},{"name":"S6","n":12,"price":0.63,"ppsf":9426,"area":752},{"name":"S7","n":39,"price":1.16,"ppsf":12000,"area":990},{"name":"S8","n":8,"price":0.6,"ppsf":10154,"area":554},{"name":"S9","n":23,"price":1.2,"ppsf":8735,"area":1550},{"name":"S11","n":19,"price":1.35,"ppsf":10000,"area":1400},{"name":"S12","n":34,"price":1.15,"ppsf":9073,"area":1132},{"name":"S13","n":8,"price":1.5,"ppsf":10991,"area":1118},{"name":"S14","n":19,"price":4.6,"ppsf":17707,"area":2300},{"name":"S17","n":13,"price":3.5,"ppsf":18814,"area":1623},{"name":"S22","n":20,"price":3.35,"ppsf":14992,"area":1860},{"name":"S23","n":13,"price":2.9,"ppsf":16004,"area":2499},{"name":"S24","n":20,"price":3.5,"ppsf":26760,"area":1408},{"name":"S25","n":37,"price":9.0,"ppsf":33404,"area":2700},{"name":"S26","n":49,"price":12.5,"ppsf":35294,"area":3240},{"name":"S28","n":41,"price":2.58,"ppsf":16608,"area":1777},{"name":"S31","n":12,"price":3.97,"ppsf":24155,"area":1454},{"name":"S33","n":67,"price":1.5,"ppsf":10743,"area":1492},{"name":"S36","n":22,"price":0.72,"ppsf":8643,"area":960},{"name":"S37","n":52,"price":0.98,"ppsf":5658,"area":1736},{"name":"S37d","n":63,"price":1.2,"ppsf":8105,"area":1770},{"name":"S38","n":10,"price":3.5,"ppsf":22778,"area":1608},{"name":"S39","n":11,"price":1.8,"ppsf":10000,"area":2350},{"name":"S40","n":8,"price":5.0,"ppsf":30956,"area":2367},{"name":"S41","n":11,"price":7.0,"ppsf":27778,"area":2475},{"name":"S43","n":63,"price":5.25,"ppsf":25463,"area":2250},{"name":"S45","n":8,"price":7.92,"ppsf":27966,"area":3058},{"name":"S46","n":13,"price":4.25,"ppsf":24390,"area":1836},{"name":"S47","n":18,"price":2.4,"ppsf":11862,"area":2010},{"name":"S48","n":54,"price":5.15,"ppsf":20750,"area":2592},{"name":"S49","n":47,"price":2.65,"ppsf":12178,"area":2070},{"name":"S50","n":60,"price":6.98,"ppsf":21304,"area":2605},{"name":"S52","n":14,"price":1.81,"ppsf":8828,"area":2200},{"name":"S53","n":14,"price":5.8,"ppsf":19087,"area":2895},{"name":"S54","n":27,"price":4.85,"ppsf":24557,"area":2250},{"name":"S55","n":12,"price":4.07,"ppsf":21018,"area":1584},{"name":"S56","n":56,"price":1.7,"ppsf":8610,"area":2000},{"name":"S57","n":22,"price":3.78,"ppsf":20591,"area":1980},{"name":"S59","n":8,"price":4.62,"ppsf":17840,"area":2661},{"name":"S60","n":15,"price":3.0,"ppsf":13392,"area":2385},{"name":"S61","n":41,"price":2.01,"ppsf":13913,"area":1527},{"name":"S62","n":16,"price":5.38,"ppsf":16243,"area":3445},{"name":"S63a","n":15,"price":2.2,"ppsf":15348,"area":1260},{"name":"S63","n":14,"price":3.38,"ppsf":17468,"area":2768},{"name":"S65","n":87,"price":2.77,"ppsf":15267,"area":1667},{"name":"S66","n":42,"price":3.48,"ppsf":15791,"area":2200},{"name":"S67","n":47,"price":3.0,"ppsf":13580,"area":2358},{"name":"S67a","n":21,"price":1.62,"ppsf":9531,"area":1727},{"name":"S68","n":30,"price":1.1,"ppsf":8797,"area":1245},{"name":"S69","n":93,"price":1.55,"ppsf":8928,"area":1580},{"name":"S70a","n":54,"price":1.65,"ppsf":9680,"area":1874},{"name":"S70","n":50,"price":1.64,"ppsf":8461,"area":1950},{"name":"S71","n":27,"price":1.0,"ppsf":7171,"area":1485},{"name":"S72","n":29,"price":3.85,"ppsf":13253,"area":2987},{"name":"S74","n":18,"price":1.56,"ppsf":11760,"area":1424},{"name":"S76","n":15,"price":1.46,"ppsf":10067,"area":1672},{"name":"S77","n":27,"price":1.25,"ppsf":7780,"area":1822},{"name":"S78","n":17,"price":0.95,"ppsf":5390,"area":1730},{"name":"S79","n":76,"price":1.3,"ppsf":8500,"area":1532},{"name":"S81","n":87,"price":2.21,"ppsf":9022,"area":2092},{"name":"S82","n":40,"price":1.19,"ppsf":6582,"area":1790},{"name":"S82a","n":19,"price":2.25,"ppsf":10394,"area":2100},{"name":"S83","n":68,"price":1.19,"ppsf":7331,"area":1735},{"name":"S84","n":49,"price":0.9,"ppsf":6465,"area":1550},{"name":"S85","n":107,"price":1.3,"ppsf":7350,"area":1741},{"name":"S86","n":62,"price":1.27,"ppsf":7836,"area":1690},{"name":"S88a","n":21,"price":1.31,"ppsf":8100,"area":1617},{"name":"S89","n":57,"price":1.1,"ppsf":8500,"area":1297},{"name":"S90","n":89,"price":1.25,"ppsf":6476,"area":1930},{"name":"S91","n":17,"price":1.75,"ppsf":6975,"area":2320},{"name":"S92","n":100,"price":0.84,"ppsf":5251,"area":1572},{"name":"S93","n":9,"price":0.85,"ppsf":6900,"area":730},{"name":"S95","n":53,"price":0.41,"ppsf":5656,"area":695},{"name":"S99","n":41,"price":1.02,"ppsf":6593,"area":1484},{"name":"S102","n":107,"price":1.75,"ppsf":10007,"area":1650},{"name":"S103","n":42,"price":1.28,"ppsf":7488,"area":1776},{"name":"S104","n":67,"price":1.73,"ppsf":8412,"area":1800},{"name":"S105","n":20,"price":0.68,"ppsf":9082,"area":925},{"name":"S106","n":38,"price":1.2,"ppsf":7284,"area":1530},{"name":"S107","n":59,"price":0.75,"ppsf":6333,"area":1202},{"name":"S108","n":58,"price":1.66,"ppsf":8366,"area":1828},{"name":"S109","n":86,"price":2.17,"ppsf":9742,"area":2430},{"name":"S110","n":23,"price":3.3,"ppsf":9895,"area":3400},{"name":"S111","n":22,"price":2.65,"ppsf":11727,"area":2270},{"name":"S112","n":23,"price":3.75,"ppsf":11551,"area":3194},{"name":"S113","n":43,"price":2.45,"ppsf":12000,"area":1859},{"name":"dwarka expressway","n":8,"price":1.3,"ppsf":8426,"area":1628},{"name":"gwal pahari","n":18,"price":1.5,"ppsf":9601,"area":1706},{"name":"manesar","n":33,"price":0.9,"ppsf":4033,"area":2287},{"name":"sohna road","n":164,"price":0.52,"ppsf":6222,"area":822}],"scatter":{"flat":[[3192,4.5],[1245,0.87],[680,0.4],[1890,1.4],[1234,0.97],[2290,1.75],[2010,1.7],[1330,1.55],[2150,1.9],[1600,2.22],[1423,1.3],[1650,2.35],[1950,1.55],[1225,1.0],[1990,0.85],[1850,1.54],[531,0.45],[1350,0.9],[1383,1.18],[1920,1.55],[1735,1.12],[1480,1.25],[1433,2.0],[558,0.32],[531,0.42],[1450,0.95],[2321,1.3],[1485,1.0],[1000,1.2],[548,0.26],[2675,2.55],[2779,2.28],[1895,1.05],[1250,1.0],[1366,0.9],[2033,2.23],[410,0.3],[2200,2.58],[1150,0.67],[1997,2.35],[2408,2.0],[1400,1.3],[2191,1.05],[2040,1.3],[1538,1.4],[301,0.2],[1488,0.99],[2100,2.08],[1671,1.19],[1617,1.62],[1950,1.6],[2051,0.73],[1967,2.0],[1266,1.25],[3950,8.5],[990,0.55],[1578,1.42],[1945,1.45],[482,0.27],[3360,3.25],[1548,0.7],[1802,1.12],[2813,4.75],[1244,0.9],[3142,6.5],[1430,1.53],[2043,2.86],[2450,2.55],[650,0.3],[1929,1.6],[650,0.6],[2060,2.05],[2132,2.45],[1720,1.38],[2120,1.25],[2390,1.33],[735,1.3],[1950,0.92],[1494,1.3],[1780,1.4],[2125,3.5],[562,0.41],[3763,4.25],[1210,0.67],[567,0.3],[1930,1.3],[1349,1.4],[1845,1.57],[1970,1.75],[1103,1.05],[730,0.29],[2480,1.0],[900,0.45],[2727,2.0],[1735,1.08],[1578,1.46],[4119,4.79],[1447,0.71],[1081,1.65],[4690,9.14],[650,0.55],[2287,0.92],[2600,2.05],[1930,1.3],[1930,1.15],[605,0.58],[1365,0.92],[1860,2.55],[1812,2.07],[591,0.7],[1255,1.26],[1850,1.4],[1690,0.95],[2262,1.4],[1308,0.81],[872,0.95],[1975,2.8],[2780,2.45],[2588,0.86],[2191,1.67],[915,1.05],[1922,1.25],[1000,1.15],[1550,0.94],[1400,1.25],[1943,1.21],[1400,1.54],[2557,2.75],[1724,1.25],[1380,2.4],[1650,2.5],[1930,1.55],[1997,1.45],[3500,6.5],[1900,1.8],[1617,1.31],[1342,0.75],[1350,1.95],[2579,1.95],[824,1.2],[1650,1.1],[1130,1.1],[5800,5.25],[1368,1.6],[998,1.51],[1929,1.59],[2525,3.35],[1498,0.7],[1640,1.2],[3198,2.5],[1969,2.79],[2040,3.67],[1763,1.25],[1343,0.94],[1950,1.65],[2950,2.6],[743,0.28],[1733,1.45],[700,0.5],[1990,1.43],[1091,0.99],[2266,1.18],[1350,0.65],[417,0.31],[728,0.46],[2871,2.0],[2150,2.3],[990,0.56],[642,0.39],[2350,2.52],[1820,0.95],[1852,1.9],[1960,1.69],[2200,3.5],[1549,2.24],[1950,1.5],[1735,1.18],[1950,1.8],[915,0.96],[2290,2.0],[800,0.5],[1440,0.8],[1836,1.82],[1590,2.15],[1210,0.95],[1950,1.75],[548,0.37],[1370,0.65],[2000,1.2],[1336,1.14],[1942,1.82],[1741,1.04],[1790,1.35],[2542,1.1],[2000,0.9],[2343,3.95],[640,0.5],[722,0.96],[1120,1.7],[1900,1.72],[1103,1.01],[900,0.71],[2040,1.8],[2711,2.6],[1900,0.8],[1050,0.5],[1930,1.25],[1153,0.7],[2600,1.65],[2450,2.45],[1124,1.55],[1407,2.0],[1756,1.08],[1300,0.5],[567,0.28],[1245,1.08],[1364,0.56],[1572,1.34],[519,0.29],[1997,1.16],[1415,1.02],[1415,1.01],[3950,7.8],[1660,1.15],[1942,1.75],[2095,1.02],[1264,0.78],[2000,1.5],[1103,1.1],[1550,0.95],[1900,1.75],[1572,0.7],[2800,3.8],[1258,2.2],[915,0.97],[1235,0.65],[1812,1.25],[1620,1.11],[431,0.26],[514,0.45],[1224,0.7],[956,0.45],[1744,1.25],[2093,2.35],[1400,1.05],[700,0.22],[826,1.0],[2262,1.93],[2685,6.2],[1345,0.7],[2200,2.58],[2191,1.72],[2779,2.29],[2943,5.5],[1930,1.3],[1975,1.9],[867,0.35],[544,0.4],[2690,3.05],[1500,0.95],[1578,0.85],[567,0.3],[1733,1.58],[1473,2.1],[1965,0.72],[2325,1.83],[830,0.53],[1960,3.05],[5513,10.75],[1414,0.65],[1825,1.75],[1735,1.35],[2200,3.45],[845,0.54],[1350,0.92],[6500,5.0],[1385,1.25],[1100,1.0],[2892,6.02],[1800,1.55],[3154,4.5],[1539,1.3],[2095,2.2],[1790,1.12],[2125,4.2],[1508,0.95],[2000,1.5],[1158,0.82],[1450,2.04],[1650,2.8],[1837,2.4],[1200,0.98],[1027,1.9],[2715,3.21],[2120,1.45],[1975,2.85],[2177,1.38],[3750,3.15],[965,1.7],[644,0.5],[1915,0.9],[1766,2.6],[1415,0.95],[2059,1.9],[1745,1.7],[1380,1.99],[1650,1.39],[1950,1.65],[1805,1.9],[1270,0.85],[1929,1.72],[2215,1.76],[2132,2.4],[6926,4.7],[1069,0.95],[1997,1.56],[1050,0.65],[2003,1.7],[1050,0.97],[3194,3.65],[997,1.05],[2500,4.6],[1950,1.0],[1245,1.1],[4640,5.8],[1895,1.25],[489,0.29],[1968,2.15],[1623,0.99],[1749,1.85],[2066,1.38],[2660,3.72],[548,0.36],[1880,1.2],[3090,4.78],[1850,1.59],[1802,1.1],[1538,1.31],[1000,0.75],[916,1.22],[2164,3.8],[1075,0.89],[750,0.45],[882,1.1],[1650,2.36],[2200,1.72],[2000,1.55],[2400,1.92],[3250,4.26],[3363,6.15],[1650,1.55],[1550,2.5],[474,0.36],[1299,1.27],[569,0.45],[1809,2.06],[526,0.47],[2085,1.32],[1830,1.42],[1200,1.4],[1900,1.7],[532,0.5],[1990,1.44],[610,0.55],[2061,2.51],[1565,1.18],[2048,1.58],[1930,0.85],[519,0.32],[2250,1.55],[1050,0.65],[763,0.65],[1314,0.67],[700,0.26],[1660,0.8],[2576,2.95],[366,0.2],[950,0.45],[2018,2.45],[5350,5.9],[1530,1.0],[1610,1.2],[2350,1.85],[1755,1.05],[1403,1.4],[1828,1.25],[2250,1.71],[2768,1.7],[1230,0.74],[2700,3.3],[650,0.5],[2700,1.35],[2800,3.75],[1929,1.6],[1690,0.9],[2567,2.65],[1338,0.91],[1730,1.07],[2350,2.72],[1180,0.84],[2290,1.73],[482,0.25],[1430,1.38],[2100,3.0],[1671,1.3],[1081,0.72],[1283,1.02],[1750,1.4],[554,0.32],[2025,1.79],[1860,2.79],[1531,2.45],[5201,3.55],[2400,2.0],[1806,2.0],[587,0.25],[1276,1.5],[893,0.4],[915,1.1],[1210,1.3],[2010,1.68],[1198,0.95],[1198,1.2],[405,0.36],[1447,1.25],[1081,0.82],[1300,0.65],[1425,1.14],[2324,1.22],[567,0.42],[3185,3.0],[500,0.22],[950,0.46],[1616,1.15],[1395,1.73],[1980,1.7],[600,0.55],[3305,3.3],[2217,2.4],[1100,1.2],[3160,6.75],[1572,0.85],[2191,1.8],[2864,4.85],[1459,4.1],[969,0.78],[1805,1.9],[2176,1.15],[675,0.3],[1820,1.2],[4095,6.3],[1385,0.95],[2215,1.65],[1423,1.42],[1340,1.28],[965,1.35],[2132,2.25],[1095,0.75],[394,0.21],[2965,6.5],[3150,3.2],[1219,1.95],[2875,2.2],[1480,1.23],[2010,1.8],[1275,0.9],[3400,3.7],[2010,1.7],[1943,1.2],[915,0.95],[1300,0.66],[2475,1.3],[2000,1.48],[1057,1.1],[687,0.32],[5200,8.44],[1917,1.5],[3763,4.75],[2325,1.65],[1262,1.4],[3150,2.65],[1375,0.86],[4200,7.56],[2095,1.05],[1252,0.85],[1381,2.4],[1950,1.6],[481,0.29],[1260,1.99],[2812,2.13],[1441,0.65],[835,1.2],[2087,1.9],[583,0.34],[2300,1.4],[1996,1.75],[1825,0.9],[2012,1.68],[748,0.55],[1415,1.1],[3375,5.9],[547,0.35],[2016,2.1],[1638,1.66],[2200,0.85],[1148,1.15],[1250,1.04],[650,0.28],[990,1.35],[1950,1.65],[4337,7.15],[2305,2.7],[1976,1.51],[1811,1.45],[2358,3.4],[2390,1.93],[2097,1.08],[2411,2.87],[1216,0.64],[2103,2.12],[1304,0.6],[626,0.45],[600,0.39],[2329,5.75],[4848,5.6],[2747,4.67],[1300,1.3],[1320,1.7],[1640,1.2],[1423,1.2],[1180,0.8],[1800,1.1],[1300,0.85],[580,0.68],[1167,1.15],[1950,1.1],[1473,0.97],[2576,2.7],[1269,0.73],[1848,1.6],[1852,1.95],[598,0.4],[2359,1.5],[3043,4.94],[4739,9.95],[1609,1.43],[1800,3.0],[1734,0.75],[1950,1.8],[3400,3.6],[2113,0.9],[1850,1.5],[2660,2.22],[1930,1.2],[1670,1.92],[2430,1.86],[2575,1.25],[2100,2.2],[1126,1.35],[1738,1.26],[1450,0.8],[1850,1.5],[1647,0.98],[1385,0.92],[1500,0.6],[2625,3.2],[1850,2.5],[2900,5.0],[1100,1.18],[1776,1.78],[2605,3.0],[2193,1.32],[366,0.2],[1910,1.38],[1000,0.5],[2090,1.12],[1262,1.25],[1987,1.85],[600,0.45],[595,0.4],[1298,0.68],[1780,1.4],[1423,1.2],[2244,2.03],[2150,1.72],[710,0.45],[2191,1.77],[1452,0.93],[1200,0.6],[1805,2.09],[1385,0.88],[1976,1.69],[1550,1.7],[2111,1.9],[569,0.4],[1747,1.21],[1997,1.13],[1180,1.0],[1380,1.6],[3090,4.63],[735,0.75],[2200,1.75],[2191,1.71],[2069,2.35],[2010,1.76],[2215,1.65],[1275,0.93],[2000,1.98],[1971,1.7],[600,0.5],[1353,0.69],[1400,1.4],[2019,2.65],[1600,4.25],[1622,0.9],[700,0.25],[1350,1.23],[318,0.25],[2400,2.35],[1538,1.38],[1919,1.85],[2117,1.0],[1815,0.99],[1950,1.78],[4739,5.31],[1642,3.0],[2538,3.65],[1671,1.06],[2905,3.9],[3363,6.1],[3025,5.5],[1360,0.74],[1080,1.25],[1276,1.32],[894,0.95],[1424,1.54],[625,0.45],[1581,0.75],[950,0.39],[1404,0.89],[1370,1.8],[1565,9.0],[2003,1.55],[489,0.3],[1383,1.27],[3950,7.9],[1423,1.25],[1950,1.6],[1457,1.1],[1326,0.66],[1260,1.02],[980,0.45],[2358,3.5],[1717,4.6],[1565,0.99],[2168,1.39],[1245,0.92],[1620,1.3],[2356,1.55],[523,0.62],[2364,1.51],[2320,1.5],[1304,1.34],[1790,0.99],[1350,3.5],[1570,1.7],[2560,1.73],[576,0.26],[990,0.46],[468,0.28],[1180,1.0],[1120,0.72],[1120,0.9],[1300,1.55],[1261,2.33],[1727,1.6],[1650,1.54],[1250,0.6],[2100,2.25],[1815,0.98],[995,1.15],[2096,2.29],[1440,1.3],[1955,1.95],[601,0.44],[597,0.85],[669,0.55],[2003,1.65],[2467,0.9],[1950,1.4],[1591,1.79],[867,1.2],[2025,2.1],[2700,3.45],[1350,1.1],[4061,4.0],[800,0.48],[1261,0.61],[1717,2.2],[2598,2.6],[734,0.87],[412,0.24],[1900,1.75],[1800,0.88],[750,1.0],[301,0.22],[2705,2.7],[3880,4.1],[1950,0.9],[495,0.41],[1380,0.8],[1260,0.7],[1128,1.75],[2100,3.0],[2150,3.3],[2368,3.55],[2585,2.25],[2698,3.65],[1961,0.8],[1350,1.2],[750,0.54],[1818,1.3],[830,0.82],[2089,0.9],[2361,1.4],[481,0.25],[2025,0.9],[1913,2.2],[990,0.72],[961,1.15],[1800,2.1],[1307,0.95],[3800,1.91],[1774,0.96],[1640,1.05],[1765,1.22],[791,0.88],[1810,1.45],[1690,1.25],[2600,2.28],[1526,0.68],[1799,1.7],[2132,2.5],[1326,0.71],[591,0.42],[1435,0.7],[1508,2.15],[1150,1.6],[1444,1.2],[1695,1.32],[2835,1.9],[2093,3.9],[2103,2.4],[1660,1.16],[750,0.6],[2979,5.2],[1875,4.85],[1578,1.52],[3355,6.15],[1935,2.35],[2000,1.55],[4200,4.5],[1110,1.0],[1286,0.71],[1150,1.91],[1000,0.42],[1946,2.3],[4400,5.0],[1081,0.75],[2850,2.95],[1315,0.78],[2408,1.84],[958,1.2],[1780,1.2],[1735,1.2],[1500,1.35],[1877,1.65],[1550,1.65],[583,0.41],[1478,0.88],[1517,0.7],[1587,0.9],[2149,2.2],[1785,1.1],[536,0.36],[1274,0.66],[1479,2.2],[2100,1.55],[554,0.35],[2361,1.4],[394,0.26],[1929,1.56],[2132,2.5],[1362,2.1],[1500,0.9],[1625,0.6],[844,0.33],[3063,3.5],[1056,1.35],[1550,1.32],[1600,2.3],[1578,1.7],[1990,1.1],[1775,1.42],[2535,1.75],[1269,0.75],[804,0.88],[576,0.27],[1975,2.9],[400,0.38],[2025,1.85],[2802,3.75],[2585,2.1],[1549,2.5],[2605,2.97],[700,0.39],[940,0.87],[735,0.49],[2091,1.15],[581,0.45],[1345,0.74],[1704,1.05],[574,0.45],[1997,1.23],[925,0.38],[1366,0.9],[1647,1.3],[1505,0.7],[2300,0.85],[1550,1.1],[1744,1.17],[1295,0.78],[1148,1.2],[1817,1.5],[2588,0.91],[1337,1.5],[2100,3.7],[949,0.69],[1725,1.1],[531,0.42],[1283,0.9],[1200,1.48],[1810,1.4],[1997,1.3],[1578,0.87],[1822,1.2],[1676,1.75],[1194,0.74],[1118,1.1],[2061,1.26],[2580,1.3],[2361,1.45],[1875,0.92],[2000,1.15],[2217,2.35],[2995,3.5],[1650,1.42],[1495,0.99],[3200,2.0],[2250,1.59],[2875,2.14],[1940,1.25],[2660,2.3],[1704,0.8],[2408,1.98],[2764,2.7],[2630,1.97],[790,0.6],[2300,0.85],[380,0.26],[2527,2.99],[1600,1.1],[1200,1.5],[1600,1.19],[1815,1.55]],"house":[[2034,6.25],[2367,9.0],[7000,6.3],[1300,1.5],[540,0.6],[3150,6.5],[5400,6.8],[2520,3.0],[5200,5.2],[2610,4.6],[1812,1.45],[1260,8.0],[3600,9.5],[990,1.1],[4000,5.0],[2088,6.75],[1350,1.35],[4500,8.0],[2844,3.51],[4500,5.25],[2367,5.65],[3000,6.0],[2727,5.15],[1000,0.85],[4500,15.0],[1081,0.75],[2592,5.5],[500,0.34],[3370,7.8],[450,0.5],[1620,1.64],[900,1.0],[2367,5.0],[1557,3.0],[1080,0.98],[1210,1.35],[4200,5.5],[1800,5.8],[2228,1.8],[3042,8.0],[1800,6.5],[1980,1.5],[1632,2.43],[1350,2.0],[2844,12.0],[3200,2.47],[2500,2.9],[1449,3.25],[2610,3.5],[432,0.4],[2160,7.45],[1935,5.5],[2700,8.9],[2880,4.4],[550,0.66],[3240,12.5],[1332,2.25],[3240,8.2],[758,0.69],[4700,3.15],[2367,5.0],[7000,13.5],[360,0.5],[3150,12.0],[1449,2.98],[240,1.0],[3600,8.0],[10799,5.5],[477,0.89],[585,0.65],[2700,6.0],[1494,4.3],[3000,1.5],[1557,2.5],[981,3.25],[3132,8.0],[1800,1.7],[4518,8.5],[3806,11.0],[1557,2.9],[2250,8.7],[4071,9.5],[1700,1.4],[846,1.2],[1623,3.93],[146,0.8],[1458,2.58],[2700,6.0],[1170,0.75],[783,0.67],[900,1.65],[2610,4.7],[450,0.95],[2430,6.0],[2499,4.0],[1800,6.95],[1300,0.95],[4125,11.0],[2736,11.5],[1350,4.0],[1557,2.75],[1350,4.35],[2385,1.5],[550,0.62],[1467,3.75],[471,0.43],[3375,9.9],[1160,0.7],[4235,9.0],[2025,4.0],[2844,13.0],[1125,0.65],[4635,4.12],[2250,4.5],[8287,8.0],[2430,5.9],[823,1.8],[2700,6.0],[2700,12.39],[1800,2.5],[1836,6.5],[1800,1.7],[3420,6.46],[1836,4.35],[3240,12.0],[2475,7.0],[5400,7.0],[6228,6.0],[2700,3.0],[2367,6.5],[2808,2.75],[1431,1.25],[5400,7.0],[2430,6.75],[4500,11.3],[450,0.5],[1760,7.35],[3240,12.0],[1337,2.0],[1575,1.75],[450,0.24],[2385,5.5],[1800,5.8],[3240,8.5],[802,0.82],[7500,3.87],[3400,3.75],[1170,1.5],[2844,10.85],[1350,1.6],[2800,1.75],[1620,3.75],[4000,5.6],[1350,4.25],[3240,12.0],[2700,10.0],[1400,2.25],[2430,5.75],[3240,6.5],[277,0.07],[921,0.66],[1935,6.5],[2250,2.8],[2745,11.95],[785,0.9],[2160,5.88],[6300,8.5],[1961,7.6],[5500,4.02],[540,0.5],[1458,2.95],[3542,2.5],[2150,1.87],[510,0.42],[4140,6.0],[1130,0.85],[500,0.65],[1449,3.5],[5400,6.5],[1460,4.6],[1400,2.5],[443,0.47],[1800,5.5],[900,1.1],[800,0.9],[1620,4.25],[5400,5.7],[1125,1.3],[963,1.3],[1095,0.75],[900,2.15],[1620,3.5],[3000,1.7],[2332,6.5],[4521,7.2],[1423,1.25],[1350,1.15],[1900,2.5],[763,0.8],[1728,3.6],[1467,5.0],[5133,3.85],[1872,3.71],[4426,3.09],[2160,7.0],[1449,3.5],[2160,6.8],[4320,6.5],[4950,5.0],[4050,11.0],[1557,2.68],[1755,0.68],[2700,7.25],[3653,3.1],[1350,5.25],[154,2.75],[892,1.6],[4680,9.0],[1548,3.15],[909,2.2],[1935,5.75],[1350,4.5],[900,0.8],[330,1.35],[1850,2.5]]}};
+
+const css = getComputedStyle(document.documentElement);
+const C = n => css.getPropertyValue(n).trim();
+const SEQ = [C('--seq0'),C('--seq1'),C('--seq2'),C('--seq3'),C('--seq4'),C('--seq5'),C('--seq6'),C('--seq7')];
+document.querySelector('.ramp').innerHTML = SEQ.map(c=>`<i style="background:${c}"></i>`).join('');
+
+Chart.defaults.font.family = '"IBM Plex Sans",sans-serif';
+Chart.defaults.color = C('--ink-2');
+Chart.defaults.borderColor = C('--line');
+Chart.defaults.plugins.tooltip.backgroundColor = C('--ink');
+Chart.defaults.plugins.tooltip.titleFont = {family:'"IBM Plex Mono",monospace'};
+Chart.defaults.plugins.tooltip.bodyFont = {family:'"IBM Plex Mono",monospace'};
+
+const fmtCr = v => '₹' + v.toFixed(2) + ' Cr';
+
+/* ---- sector grid ---- */
+const grid = document.getElementById('sectorGrid');
+const tip = document.getElementById('tip');
+const prices = DATA.sectors.map(s=>s.price);
+const lo = 1, hi = 6;
+function shade(p){
+  const t = Math.max(0, Math.min(1, (p - lo)/(hi - lo)));
+  return SEQ[Math.round(t*(SEQ.length-1))];
+}
+DATA.sectors.forEach(s=>{
+  const el = document.createElement('div');
+  el.className = 'tile';
+  el.style.background = shade(s.price);
+  el.style.color = s.price > 3.2 ? '#fff' : C('--ink');
+  el.textContent = s.name;
+  el.tabIndex = 0;
+  el.setAttribute('aria-label', `${s.name}: median ${fmtCr(s.price)}, ${s.n} listings`);
+  const show = (x,y)=>{
+    tip.innerHTML = `<b>${s.name.replace('S','sector ')}</b><br>median ${fmtCr(s.price)}<br>₹${s.ppsf.toLocaleString('en-IN')}/sqft · ${s.area.toLocaleString('en-IN')} sqft<br>${s.n} listings`;
+    tip.style.opacity = 1;
+    tip.style.left = Math.min(x+14, innerWidth-250)+'px';
+    tip.style.top = (y+14)+'px';
+  };
+  el.addEventListener('mousemove', e=>show(e.clientX,e.clientY));
+  el.addEventListener('focus', ()=>{const r=el.getBoundingClientRect(); show(r.right, r.top);});
+  el.addEventListener('mouseleave', ()=>tip.style.opacity=0);
+  el.addEventListener('blur', ()=>tip.style.opacity=0);
+  grid.appendChild(el);
+});
+
+/* ---- charts ---- */
+const AGE_ORDER = ["Under Construction","New Property","Relatively New","Moderately Old","Old Property"];
+let charts = {};
+
+function segColor(seg){ return seg==='house' ? C('--yellow') : C('--blue'); }
+
+function buildCharts(seg){
+  const d = DATA[seg];
+  document.getElementById('k-listings').textContent = d.kpi.listings.toLocaleString('en-IN');
+  document.getElementById('k-price').innerHTML = '₹' + d.kpi.medPrice.toFixed(2) + ' <small>Cr</small>';
+  document.getElementById('k-ppsf').textContent = d.kpi.medPpsf.toLocaleString('en-IN');
+  document.getElementById('k-sectors').textContent = d.kpi.sectors;
+
+  Object.values(charts).forEach(c=>c.destroy());
+
+  const binLabels = d.priceHist.bins.slice(0,-1).map((b,i)=>`${b}–${d.priceHist.bins[i+1]}`);
+  charts.hist = new Chart(cHist, {
+    type:'bar',
+    data:{labels:binLabels, datasets:[{data:d.priceHist.counts, backgroundColor:segColor(seg),
+      borderRadius:{topLeft:3,topRight:3}, categoryPercentage:1, barPercentage:.92}]},
+    options:{maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:i=>'₹'+i[0].label+' Cr', label:i=>i.parsed.y.toLocaleString()+' listings'}}},
+      scales:{x:{grid:{display:false}, ticks:{maxTicksLimit:7}}, y:{border:{display:false}}}}
+  });
+
+  charts.beds = new Chart(cBeds, {
+    type:'bar',
+    data:{labels:Object.keys(d.bedsMedian).map(b=>b+' BHK'),
+      datasets:[{data:Object.values(d.bedsMedian), backgroundColor:segColor(seg),
+      borderRadius:{topLeft:3,topRight:3}, barPercentage:.6}]},
+    options:{maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:i=>'median '+fmtCr(i.parsed.y)}}},
+      scales:{x:{grid:{display:false}}, y:{border:{display:false}, ticks:{callback:v=>'₹'+v+' Cr'}}}}
+  });
+
+  const ages = AGE_ORDER.filter(a=>d.agePpsf[a]!=null);
+  charts.age = new Chart(cAge, {
+    type:'bar',
+    data:{labels:ages, datasets:[{data:ages.map(a=>d.agePpsf[a]), backgroundColor:segColor(seg),
+      borderRadius:{topRight:3, bottomRight:3}, barPercentage:.62}]},
+    options:{indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:i=>'₹'+i.parsed.x.toLocaleString('en-IN')+' / sq.ft.'}}},
+      scales:{y:{grid:{display:false}}, x:{border:{display:false}, ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')}}}}
+  });
+
+  const sets = [];
+  if(seg!=='house') sets.push({label:'flat', data:DATA.scatter.flat.map(p=>({x:p[0],y:p[1]})),
+    backgroundColor:'rgba(42,120,214,.45)', pointRadius:2.6, pointHoverRadius:5});
+  if(seg!=='flat') sets.push({label:'house', data:DATA.scatter.house.map(p=>({x:p[0],y:p[1]})),
+    backgroundColor:'rgba(237,161,0,.55)', pointRadius:2.6, pointHoverRadius:5});
+  charts.scatter = new Chart(cScatter, {
+    type:'scatter', data:{datasets:sets},
+    options:{maintainAspectRatio:false,
+      plugins:{legend:{display:sets.length>1, labels:{usePointStyle:true, boxHeight:7}},
+      tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${i.parsed.x.toLocaleString('en-IN')} sqft · ${fmtCr(i.parsed.y)}`}}},
+      scales:{x:{title:{display:true,text:'area (sq.ft.)'}, border:{display:false}},
+              y:{title:{display:true,text:'price (₹ crore)'}, border:{display:false}}}}
+  });
+}
+
+document.getElementById('seg').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed', b===btn));
+  buildCharts(btn.dataset.seg);
+});
+
+buildCharts('all');
+</script>
+</body>
+</html>

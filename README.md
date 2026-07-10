@@ -2,13 +2,15 @@
 
 A reproducible, end-to-end exploratory data analysis of **~3,800 residential property listings** (flats and independent houses) in Gurgaon, India — from raw scraped feed to cleaned dataset and market insights.
 
+**▶ [Live interactive dashboard](https://safdar-hussain1.github.io/Gurgaon-RealEstate-EDA/)** — a sector-by-sector price atlas with a flat/house segment toggle.
+
 ![Price vs area](reports/figures/price_vs_area.png)
 
 ## Highlights
 
 - **Documented cleaning pipeline** (`src/cleaning.py`): duplicate removal, categorical labelling, and percentile-based trimming of unit-error records (e.g. an "875,000 sq. ft. flat" and ₹600,000/sq.ft. entries), with a per-step log of rows affected.
 - **Reusable code, not just a notebook** — cleaning rules and plot styling live in an importable `src/` package; the notebook stays focused on narrative and analysis.
-- **Market findings**: houses list at ~3× the median price of flats; sector medians span roughly 5×; 3 BHK dominates supply; bathrooms and bedrooms are nearly interchangeable signals (r ≈ 0.9); new/under-construction stock commands the highest ₹/sq.ft.
+- **Market findings**: houses list at ~3× the median price of flats; sector medians span roughly 5×; 3 BHK dominates supply; bathrooms and bedrooms are nearly interchangeable signals (r ≈ 0.9); and the apparent "old property premium" in ₹/sq.ft. turns out to be a Simpson's paradox driven by property mix.
 
 ## Repository structure
 
@@ -67,7 +69,7 @@ Known quirks handled by the pipeline:
 2. **Location is a step function** — median prices across sectors (≥30 listings) span ~5×, topped by the golden-corridor sectors.
 3. **3 BHK is the centre of gravity** of supply; median price roughly doubles per additional bedroom up to 5 BHK.
 4. **Bathrooms ≈ bedrooms** (r ≈ 0.91) — they carry nearly identical information about property size.
-5. **Newness premium** — under-construction and new properties command the highest median ₹/sq.ft.
+5. **A Simpson's paradox in property age** — in aggregate, *old* properties show the highest ₹/sq.ft., but only because 58% of old listings are houses (vs 22% overall) and houses carry ~2.5× the ₹/sq.ft. of flats. Within flats, under-construction stock is the priciest per sq.ft.
 
 Full reasoning and charts are in the [notebook](notebooks/gurgaon_real_estate_eda.ipynb).
 
